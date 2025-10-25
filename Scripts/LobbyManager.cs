@@ -1,11 +1,12 @@
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using Photon.Pun;
-using Photon.Realtime;
-using TMPro;
 using ExitGames.Client.Photon;
 using Lean.Gui;
+using Photon.Pun;
+using Photon.Realtime;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// Gestiona el lobby principal: crear salas, listar salas disponibles
@@ -128,7 +129,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log($"Unido a sala: {PhotonNetwork.CurrentRoom.Name}");
-        // El cambio de escena se manejará desde RoomManager
+
+        SceneManager.LoadScene("RoomScene");
     }
 
     /// <summary>

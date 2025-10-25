@@ -6,6 +6,7 @@ using Photon.Realtime;
 using TMPro;
 using System.Collections.Generic;
 using ExitGames.Client.Photon;
+using Lean.Gui;
 
 /// <summary>
 /// Gestiona la lógica dentro de una sala: 
@@ -25,9 +26,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
     [SerializeField] private GameObject playerItemPrefab;
 
     [Header("UI - Botones")]
-    [SerializeField] private Button playButton;
-    [SerializeField] private Button leaveButton;
-    [SerializeField] private Button updateButton;
+    [SerializeField] private LeanButton playButton;
+    [SerializeField] private LeanButton leaveButton;
+    [SerializeField] private LeanButton updateButton;
 
     [Header("UI - Configuración de Economía (Solo Host)")]
     [SerializeField] private GameObject economySettingsPanel;
@@ -69,17 +70,17 @@ public class RoomManager : MonoBehaviourPunCallbacks
     {
         if (playButton != null)
         {
-            playButton.onClick.AddListener(OnPlayButtonClicked);
+            playButton.OnClick.AddListener(OnPlayButtonClicked);
         }
 
         if (leaveButton != null)
         {
-            leaveButton.onClick.AddListener(OnLeaveButtonClicked);
+            leaveButton.OnClick.AddListener(OnLeaveButtonClicked);
         }
 
         if (updateButton != null)
         {
-            updateButton.onClick.AddListener(OnUpdateButtonClicked);
+            updateButton.OnClick.AddListener(OnUpdateButtonClicked);
         }
     }
 
