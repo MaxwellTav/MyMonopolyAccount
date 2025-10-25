@@ -17,6 +17,8 @@ public class GameEconomySettings : MonoBehaviour
     private const double ORIGINAL_IMPUESTO_LUJO = 75.0;
     private const double ORIGINAL_IMPUESTO_RENTA = 200.0;
 
+    [SerializeField] float InitialAmmount = 15000;
+
     [Header("Configuración Actual")]
     private int denominacionMinima = 1;
     private int valorMediterraneo = 60; // Valor de Avenida Mediterráneo configurado
@@ -45,11 +47,11 @@ public class GameEconomySettings : MonoBehaviour
     /// </summary>
     public void LoadEconomyFromRoom()
     {
-        if (!PhotonNetwork.InRoom)
-        {
-            Debug.LogWarning("No estamos en una sala, usando valores por defecto");
-            return;
-        }
+        //if (!PhotonNetwork.InRoom)
+        //{
+        //    Debug.LogWarning("No estamos en una sala, usando valores por defecto");
+        //    return;
+        //}
 
         var roomProps = PhotonNetwork.CurrentRoom.CustomProperties;
 
@@ -150,7 +152,7 @@ public class GameEconomySettings : MonoBehaviour
     /// </summary>
     public int GetInitialMoney()
     {
-        return CalculateScaledValue(1500);
+        return CalculateScaledValue(InitialAmmount);
     }
 
     /// <summary>

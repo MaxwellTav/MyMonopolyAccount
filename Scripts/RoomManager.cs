@@ -1,5 +1,4 @@
-using UnityEngine;
-using UnityEngine.UI;
+ï»¿using UnityEngine;
 using UnityEngine.SceneManagement;
 using Photon.Pun;
 using Photon.Realtime;
@@ -9,15 +8,12 @@ using ExitGames.Client.Photon;
 using Lean.Gui;
 
 /// <summary>
-/// Gestiona la lógica dentro de una sala: 
-/// - Mostrar jugadores
-/// - Botón JUGAR (solo creador)
-/// - Botón SALIR (todos)
-/// - Iniciar juego
+/// Gestiona la SALA DE ESPERA antes de iniciar el juego
+/// Solo se usa en RoomScene
 /// </summary>
 public class RoomManager : MonoBehaviourPunCallbacks
 {
-    [Header("UI - Información de Sala")]
+    [Header("UI - InformaciÃ³n de Sala")]
     [SerializeField] private TMP_Text roomNameText;
     [SerializeField] private TMP_Text playerCountText;
 
@@ -30,12 +26,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
     [SerializeField] private LeanButton leaveButton;
     [SerializeField] private LeanButton updateButton;
 
-    [Header("UI - Configuración de Economía (Solo Host)")]
+    [Header("UI - ConfiguraciÃ³n de EconomÃ­a (Solo Host)")]
     [SerializeField] private GameObject economySettingsPanel;
     [SerializeField] private TMP_InputField denominacionMinimaInput;
     [SerializeField] private TMP_InputField valorMediterraneoInput;
 
-    [Header("Configuración")]
+    [Header("ConfiguraciÃ³n")]
     [SerializeField] private string gameSceneName = "GameScene";
     [SerializeField] private int minPlayersToStart = 2;
 
@@ -46,8 +42,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
         // Verificar que estamos en una sala
         if (!PhotonNetwork.InRoom)
         {
-            Debug.LogWarning("No estamos en una sala, regresando al lobby");
-            SceneManager.LoadScene("LobbyScene"); // Ajusta el nombre de tu escena de lobby
+            Debug.LogWarning("[RoomManager] No estamos en una sala, regresando al lobby");
+            SceneManager.LoadScene("LobbyScene");
             return;
         }
 
@@ -59,13 +55,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
         UpdatePlayerList();
         UpdateButtonVisibility();
 
-        // Configurar panel de economía
+        // Configurar panel de economÃ­a
         SetupEconomyPanel();
     }
 
-    /// <summary>
-    /// Configura los botones de la sala
-    /// </summary>
+    #region CONFIGURACIÃ“N
+
     private void SetupButtons()
     {
         if (playButton != null)
@@ -84,27 +79,19 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
     }
 
-    /// <summary>
-    /// Configura el panel de economía
-    /// </summary>
     private void SetupEconomyPanel()
     {
         if (economySettingsPanel != null)
         {
-            // Solo el creador ve el panel de configuración
             economySettingsPanel.SetActive(PhotonNetwork.IsMasterClient);
         }
 
-        // Cargar valores actuales de la sala
         if (PhotonNetwork.IsMasterClient)
         {
             LoadEconomySettings();
         }
     }
 
-    /// <summary>
-    /// Carga la configuración de economía actual
-    /// </summary>
     private void LoadEconomySettings()
     {
         if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("DenominacionMinima"))
@@ -122,9 +109,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
     }
 
-    /// <summary>
-    /// Guarda la configuración de economía (solo host)
-    /// </summary>
     public void SaveEconomySettings()
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -143,7 +127,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
             valorMediterraneo = Mathf.Max(1, val);
         }
 
-        // Actualizar propiedades de la sala
         Hashtable roomProperties = new Hashtable
         {
             { "DenominacionMinima", denominacion },
@@ -151,12 +134,13 @@ public class RoomManager : MonoBehaviourPunCallbacks
         };
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
-        Debug.Log($"Economía configurada: Denominación={denominacion}, Mediterráneo={valorMediterraneo}");
+        Debug.Log($"[RoomManager] EconomÃ­a configurada: DenominaciÃ³n={denominacion}, MediterrÃ¡neo={valorMediterraneo}");
     }
 
-    /// <summary>
-    /// Actualiza la información de la sala
-    /// </summary>
+    #endregion
+
+    #region LISTA DE JUGADORES
+
     private void UpdateRoomInfo()
     {
         if (roomNameText != null)
@@ -170,12 +154,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
     }
 
-    /// <summary>
-    /// Actualiza la lista de jugadores
-    /// </summary>
     private void UpdatePlayerList()
     {
-        // Limpiar items anteriores
         foreach (var item in playerListItems.Values)
         {
             if (item != null)
@@ -183,16 +163,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
         playerListItems.Clear();
 
-        // Crear items para cada jugador
         foreach (var player in PhotonNetwork.PlayerList)
         {
             CreatePlayerItem(player);
         }
     }
 
-    /// <summary>
-    /// Crea un item de jugador en la lista
-    /// </summary>
     private void CreatePlayerItem(Player player)
     {
         if (playerItemPrefab == null || playerListContainer == null)
@@ -205,7 +181,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             string displayName = player.NickName;
 
-            // Marcar al creador de la sala
             if (player.IsMasterClient)
             {
                 displayName += " (Host)";
@@ -217,19 +192,14 @@ public class RoomManager : MonoBehaviourPunCallbacks
         playerListItems[player.ActorNumber] = playerItem;
     }
 
-    /// <summary>
-    /// Actualiza la visibilidad de los botones según el rol del jugador
-    /// </summary>
     private void UpdateButtonVisibility()
     {
         bool isMaster = PhotonNetwork.IsMasterClient;
 
-        // Botón JUGAR: Solo visible para el creador
         if (playButton != null)
         {
             playButton.gameObject.SetActive(isMaster);
 
-            // Solo se puede jugar si hay suficientes jugadores
             if (isMaster)
             {
                 bool canStart = PhotonNetwork.CurrentRoom.PlayerCount >= minPlayersToStart;
@@ -237,72 +207,70 @@ public class RoomManager : MonoBehaviourPunCallbacks
             }
         }
 
-        // Botón SALIR: Visible para todos
         if (leaveButton != null)
         {
             leaveButton.gameObject.SetActive(true);
         }
     }
 
-    /// <summary>
-    /// Maneja el click en el botón JUGAR (solo host)
-    /// </summary>
+    #endregion
+
+    #region BOTONES
+
     private void OnPlayButtonClicked()
     {
         if (!PhotonNetwork.IsMasterClient)
         {
-            Debug.LogWarning("Solo el creador puede iniciar el juego");
+            Debug.LogWarning("[RoomManager] Solo el creador puede iniciar el juego");
             return;
         }
 
         if (PhotonNetwork.CurrentRoom.PlayerCount < minPlayersToStart)
         {
-            Debug.LogWarning($"Se necesitan al menos {minPlayersToStart} jugadores");
-            ShowNotification($"Se necesitan al menos {minPlayersToStart} jugadores para iniciar");
+            Debug.LogWarning($"[RoomManager] Se necesitan al menos {minPlayersToStart} jugadores");
             return;
         }
 
-        // Guardar configuración de economía antes de iniciar
+        // Guardar configuraciÃ³n de economÃ­a
         SaveEconomySettings();
 
-        // Cerrar la sala para nuevos jugadores
+        // Cerrar sala
         PhotonNetwork.CurrentRoom.IsOpen = false;
         PhotonNetwork.CurrentRoom.IsVisible = false;
 
-        // Cambiar estado del juego
-        Hashtable gameStateProps = new Hashtable { { "EstadoJuego", "EnJuego" } };
+        // Cambiar estado
+        Hashtable gameStateProps = new Hashtable
+        {
+            { "EstadoJuego", "EnJuego" },
+            { "GameStartTime", PhotonNetwork.Time } // Guardar tiempo de inicio
+        };
         PhotonNetwork.CurrentRoom.SetCustomProperties(gameStateProps);
 
-        Debug.Log("Iniciando juego...");
+        Debug.Log("[RoomManager] Iniciando juego...");
 
-        // Cargar escena de juego para todos
+        // Cargar escena de juego
         PhotonNetwork.LoadLevel(gameSceneName);
     }
 
-    /// <summary>
-    /// Maneja el click en el botón SALIR
-    /// </summary>
     private void OnLeaveButtonClicked()
     {
-        Debug.Log("Saliendo de la sala...");
+        Debug.Log("[RoomManager] Saliendo de la sala...");
         PhotonNetwork.LeaveRoom();
     }
 
-    /// <summary>
-    /// Maneja el click en el botón ACTUALIZAR
-    /// </summary>
     private void OnUpdateButtonClicked()
     {
         UpdatePlayerList();
         UpdateRoomInfo();
-        ShowNotification("Lista actualizada");
     }
 
-    // Callbacks de Photon
+    #endregion
+
+    #region CALLBACKS
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        Debug.Log($"Jugador entró: {newPlayer.NickName}");
+        Debug.Log($"[RoomManager] Jugador entrÃ³: {newPlayer.NickName}");
         UpdatePlayerList();
         UpdateRoomInfo();
         UpdateButtonVisibility();
@@ -310,7 +278,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        Debug.Log($"Jugador salió: {otherPlayer.NickName}");
+        Debug.Log($"[RoomManager] Jugador saliÃ³: {otherPlayer.NickName}");
         UpdatePlayerList();
         UpdateRoomInfo();
         UpdateButtonVisibility();
@@ -318,7 +286,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public override void OnMasterClientSwitched(Player newMasterClient)
     {
-        Debug.Log($"Nuevo host: {newMasterClient.NickName}");
+        Debug.Log($"[RoomManager] Nuevo host: {newMasterClient.NickName}");
         UpdateButtonVisibility();
         SetupEconomyPanel();
         UpdatePlayerList();
@@ -326,26 +294,21 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public override void OnLeftRoom()
     {
-        Debug.Log("Saliste de la sala");
-        SceneManager.LoadScene("LobbyScene"); // Ajusta el nombre de tu escena de lobby
+        Debug.Log("[RoomManager] Saliste de la sala");
+        SceneManager.LoadScene("LobbyScene");
     }
 
-    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
-    {
-        // Si cambió el estado del juego
-        if (propertiesThatChanged.ContainsKey("EstadoJuego"))
-        {
-            string estado = propertiesThatChanged["EstadoJuego"].ToString();
-            Debug.Log($"Estado del juego cambió a: {estado}");
-        }
-    }
+    #endregion
 
-    /// <summary>
-    /// Muestra una notificación
-    /// </summary>
-    private void ShowNotification(string message)
+    private void OnDestroy()
     {
-        Debug.Log($"[NOTIFICACIÓN] {message}");
-        // Implementar sistema de notificaciones en UI
+        if (playButton != null)
+            playButton.OnClick.RemoveAllListeners();
+
+        if (leaveButton != null)
+            leaveButton.OnClick.RemoveAllListeners();
+
+        if (updateButton != null)
+            updateButton.OnClick.RemoveAllListeners();
     }
 }

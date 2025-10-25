@@ -1,11 +1,13 @@
 using UnityEngine;
-using UnityEngine.UI;
 using Photon.Realtime;
+using Photon.Pun;
 using TMPro;
 using ExitGames.Client.Photon;
+using Lean.Gui;
 
 /// <summary>
 /// Representa un item de sala en la lista del lobby
+/// Compatible con LeanButton
 /// </summary>
 public class RoomItem : MonoBehaviour
 {
@@ -13,10 +15,39 @@ public class RoomItem : MonoBehaviour
     [SerializeField] private TMP_Text roomNameText;
     [SerializeField] private TMP_Text playerCountText;
     [SerializeField] private TMP_Text statusText;
-    [SerializeField] private Button joinButton;
+
+    // IMPORTANTE: LeanButton en lugar de Button
+    private LeanButton leanButton;
 
     private RoomInfo roomInfo;
     private LobbyManager lobbyManager;
+
+    private void Awake()
+    {
+        // Obtener el LeanButton del GameObject principal
+        leanButton = GetComponent<LeanButton>();
+
+        if (leanButton == null)
+        {
+            Debug.LogError("[RoomItem] No se encontró LeanButton en el GameObject");
+        }
+
+        // Auto-buscar textos si no están asignados
+        if (roomNameText == null)
+        {
+            roomNameText = transform.Find("RoomNameText")?.GetComponent<TMP_Text>();
+        }
+
+        if (playerCountText == null)
+        {
+            playerCountText = transform.Find("PlayerCountText")?.GetComponent<TMP_Text>();
+        }
+
+        if (statusText == null)
+        {
+            statusText = transform.Find("StatusText")?.GetComponent<TMP_Text>();
+        }
+    }
 
     /// <summary>
     /// Configura el item con la información de la sala
@@ -28,11 +59,20 @@ public class RoomItem : MonoBehaviour
 
         UpdateUI();
 
-        // Configurar botón
-        if (joinButton != null)
+        // Configurar LeanButton
+        if (leanButton != null)
         {
-            joinButton.onClick.RemoveAllListeners();
-            joinButton.onClick.AddListener(OnJoinButtonClicked);
+            // Limpiar listeners previos
+            leanButton.OnClick.RemoveAllListeners();
+
+            // Asignar el evento OnClick
+            leanButton.OnClick.AddListener(OnJoinButtonClicked);
+
+            Debug.Log($"[RoomItem] Botón configurado para sala: {info.Name}");
+        }
+        else
+        {
+            Debug.LogError("[RoomItem] LeanButton es null, no se puede configurar el evento");
         }
     }
 
@@ -77,12 +117,13 @@ public class RoomItem : MonoBehaviour
             }
         }
 
-        // Habilitar/deshabilitar botón según disponibilidad
-        if (joinButton != null)
+        // Habilitar/deshabilitar LeanButton según disponibilidad
+        if (leanButton != null)
         {
             bool canJoin = roomInfo.IsOpen &&
                           roomInfo.PlayerCount < roomInfo.MaxPlayers;
-            joinButton.interactable = canJoin;
+
+            leanButton.interactable = canJoin;
         }
     }
 
@@ -116,10 +157,26 @@ public class RoomItem : MonoBehaviour
     /// </summary>
     private void OnJoinButtonClicked()
     {
-        if (lobbyManager != null && roomInfo != null)
+        if (roomInfo == null)
         {
-            lobbyManager.JoinRoom(roomInfo.Name);
+            Debug.LogError("[RoomItem] RoomInfo es null");
+            return;
         }
+
+        if (lobbyManager == null)
+        {
+            Debug.LogError("[RoomItem] LobbyManager es null");
+            return;
+        }
+
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            Debug.LogWarning("[RoomItem] No conectado a Photon");
+            return;
+        }
+
+        Debug.Log($"[RoomItem] Intentando unirse a sala: {roomInfo.Name}");
+        lobbyManager.JoinRoom(roomInfo.Name);
     }
 
     /// <summary>
@@ -138,4 +195,35 @@ public class RoomItem : MonoBehaviour
             roomNameText.text = displayText;
         }
     }
+
+    /// <summary>
+    /// Actualiza la información de la sala (útil para refresh)
+    /// </summary>
+    public void RefreshRoomInfo(RoomInfo info)
+    {
+        roomInfo = info;
+        UpdateUI();
+    }
+
+    private void OnDestroy()
+    {
+        // Limpiar listeners al destruir para evitar memory leaks
+        if (leanButton != null)
+        {
+            leanButton.OnClick.RemoveAllListeners();
+        }
+    }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Método de debugging para el editor
+    /// </summary>
+    private void OnValidate()
+    {
+        if (leanButton == null)
+        {
+            leanButton = GetComponent<LeanButton>();
+        }
+    }
+#endif
 }
